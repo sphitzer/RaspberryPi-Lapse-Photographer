@@ -6,7 +6,7 @@ import logging
 from loguru import logger
 import fastapi
 
-gp.error_severity[gp.GP_ERROR] = logging.WARNING
+gp.error_severity[gp.GP_ERROR] = logging.DEBUG
 
 # create the directory that will house photos captured by the timelapse 
 def create_timelapse_dir(output_path, tl_name):
@@ -36,6 +36,7 @@ def connect_camera():
         except gp.GPhoto2Error as ex:
             if ex.code == gp.GP_ERROR_MODEL_NOT_FOUND:
                 print("No camera connected - checking again in 10 seconds")
+                print(ex.code)
                 # no camera, try again in 10 seconds
                 time.sleep(10)
                 continue
@@ -50,8 +51,19 @@ def connect_camera():
     
     return camera
 
+
+#WIP, untested...
 def execute_timelapse(camera):
+    file_path = camera.capture(gp.GP_CAPTURE_IMAGE)
+    print('Camera file path: {0}/{1}'.format(file_path.folder, file_path.name))
+    target = os.path.join('/tmp', file_path.name)
+    print('Copying image to', target)
+    camera_file = camera.file_get(
+    file_path.folder, file_path.name, gp.GP_FILE_TYPE_NORMAL)
+    camera_file.save(target)
+    subprocess.call(['xdg-open', target])
     return True
+
 
 if __name__ == "__main__":
 
@@ -74,7 +86,9 @@ if __name__ == "__main__":
     camera = connect_camera()
 
     #run timelapse sequence
-    execute_timelapse()
+    execute_timelapse(camera)
 
     #exit camera instance
     camera.exit()
+
+

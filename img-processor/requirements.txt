@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+loguru
+argparse
+opencv-python
+ffmpeg-python
+graphviz
+numpy
