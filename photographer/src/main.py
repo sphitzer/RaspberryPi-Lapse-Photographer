@@ -5,18 +5,18 @@ import argparse
 import logging
 from loguru import logger
 import fastapi
-
+import random
 gp.error_severity[gp.GP_ERROR] = logging.DEBUG
 
 # create the directory that will house photos captured by the timelapse 
 def create_timelapse_dir(output_path, tl_name):
     try:
         original_umask = os.umask(0)
-        os.mkdir(output_path + tl_name, 0o777)
-        os.mkdir(output_path + tl_name + '/capture', 0o777)
+        os.mkdir(output_path + '/' + tl_name, 0o777)
+        os.mkdir(output_path + '/' + tl_name + '/capture', 0o777)
         
     except OSError as ose:
-        if not os.listdir(output_path + tl_name + '/capture'):
+        if not os.listdir(output_path + '/' + tl_name + '/capture'):
             print('Directory with name %s exists, but capture directory is empty.  Creating timelapse...' % tl_name)
         else: 
             print('Timelapse with the name %s already exists' % tl_name)
@@ -25,6 +25,8 @@ def create_timelapse_dir(output_path, tl_name):
         print('Creating timelapse... Photos located under /%s/capture ' % tl_name)
     finally:
         os.umask(original_umask)
+
+    return 
 
 # create camera instance, detect connected cameras via usb
 def connect_camera():
@@ -36,7 +38,7 @@ def connect_camera():
         except gp.GPhoto2Error as ex:
             if ex.code == gp.GP_ERROR_MODEL_NOT_FOUND:
                 print("No camera connected - checking again in 10 seconds")
-                print(ex.code)
+                print("EX CODE: " + str(ex.code))
                 # no camera, try again in 10 seconds
                 time.sleep(10)
                 continue
@@ -44,25 +46,28 @@ def connect_camera():
             raise
 
         # on connection, print camera information & exit loop
-        print('Summary')
-        print('=======')
-        print(camera.get_summary())
+        # re-add this as debug logging
+        #print('Summary')
+        #print('=======')
+        #print(camera.get_summary())
         break
     
     return camera
 
 
 #WIP, untested...
-def execute_timelapse(camera):
-    file_path = camera.capture(gp.GP_CAPTURE_IMAGE)
-    print('Camera file path: {0}/{1}'.format(file_path.folder, file_path.name))
-    target = os.path.join('/tmp', file_path.name)
-    print('Copying image to', target)
-    camera_file = camera.file_get(
-    file_path.folder, file_path.name, gp.GP_FILE_TYPE_NORMAL)
-    camera_file.save(target)
-    subprocess.call(['xdg-open', target])
-    return True
+def execute_timelapse(camera, capture_path, interval, frames):
+
+    for x in range(frames):
+        file_path = camera.capture(gp.GP_CAPTURE_IMAGE)
+        print('Camera file path: {0}/{1}'.format(file_path.folder, file_path.name))
+        target = os.path.join(capture_path, file_path.name)
+        print('Copying image to', target)
+        camera_file = camera.file_get(
+        file_path.folder, file_path.name, gp.GP_FILE_TYPE_NORMAL)
+        camera_file.save(target)
+        time.sleep(interval)
+        #subprocess.call(['xdg-open', target])
 
 
 if __name__ == "__main__":
@@ -80,15 +85,16 @@ if __name__ == "__main__":
     print(args)
 
     #create directory
+    capture_path = os.path.join(args.output_path, args.name, 'capture')
+    print(capture_path)
     create_timelapse_dir(args.output_path, args.name)
 
     #create camera instance
     camera = connect_camera()
 
     #run timelapse sequence
-    execute_timelapse(camera)
+    execute_timelapse(camera, capture_path, args.interval, args.frames)
 
     #exit camera instance
     camera.exit()
-
 
