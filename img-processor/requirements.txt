@@ -6,3 +6,7 @@ opencv-python
 ffmpeg-python
 graphviz
 numpy
+boto3
+python-dotenv
+mux_python
+logger

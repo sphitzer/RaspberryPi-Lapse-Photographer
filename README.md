@@ -20,6 +20,9 @@ Examples: https://github.com/jim-easterbrook/python-gphoto2/tree/master/examples
 
 ## img-processor
 Code to edit photos & generate timelapse 
+  ### todo
+  * add method to strip metadata
+  * open ai methods
 
 ### prereqs
 * opencv setup for m1 mac: https://blog.roboflow.com/m1-opencv/

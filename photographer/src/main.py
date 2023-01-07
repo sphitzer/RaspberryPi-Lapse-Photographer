@@ -14,6 +14,8 @@ def create_timelapse_dir(output_path, tl_name):
         original_umask = os.umask(0)
         os.mkdir(output_path + '/' + tl_name, 0o777)
         os.mkdir(output_path + '/' + tl_name + '/capture', 0o777)
+        os.mkdir(output_path + '/' + tl_name + '/output', 0o777)
+
         
     except OSError as ose:
         if not os.listdir(output_path + '/' + tl_name + '/capture'):

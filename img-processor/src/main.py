@@ -1,93 +1,127 @@
-import sys, os
+import sys, os, time 
 import argparse
-import cv2 as cv
+
+#replace w/ preferred logging tool 
+import logging
+import logger
+
 import ffmpeg
-import numpy as np
-import math
+import boto3
+from botocore.exceptions import ClientError
+from dotenv import load_dotenv
+import requests
+import mux_python
 
-def display_image():
+# load environment variables
+load_dotenv()
 
-    img = cv.imread(cv.samples.findFile("../test-images-jpeg/photo-20210210-093458.jpg"))
+#mux auth setup
+configuration = mux_python.Configuration()
+configuration.username = os.environ['MUX_ACCESSS_TOKEN_ID']
+configuration.password = os.environ['MUX_SECRET_KEY']
 
-    if img is None:
-        sys.exit("Could not read the image.")
-    cv.imshow("Display window", img)
-    k = cv.waitKey(0)
-    if k == ord("s"):
-        cv.imwrite("../test-images-jpeg/ohoto.png", img)
+# Mux API Client Initialization
+assets_api = mux_python.AssetsApi(mux_python.ApiClient(configuration))
+playback_ids_api = mux_python.PlaybackIDApi(mux_python.ApiClient(configuration))
 
-def edge_detection():
-    # Loads an image
-    src = cv.imread(cv.samples.findFile("../test-images-jpeg/photo-20210210-093458.jpg"), cv.IMREAD_GRAYSCALE)
-    dst = cv.Canny(src, 100, 170, None, 3)
-    
-    # Copy edges to the images that will display the results in BGR
-    cdst = cv.cvtColor(dst, cv.COLOR_GRAY2BGR)
-    cdstP = np.copy(cdst)
-    
-    lines = cv.HoughLines(dst, 1, np.pi / 180, 150, None, 0, 0)
-    
-    if lines is not None:
-        for i in range(0, len(lines)):
-            rho = lines[i][0][0]
-            theta = lines[i][0][1]
-            a = math.cos(theta)
-            b = math.sin(theta)
-            x0 = a * rho
-            y0 = b * rho
-            pt1 = (int(x0 + 1000*(-b)), int(y0 + 1000*(a)))
-            pt2 = (int(x0 - 1000*(-b)), int(y0 - 1000*(a)))
-            cv.line(cdst, pt1, pt2, (0,0,255), 3, cv.LINE_AA)
-    
-    
-    linesP = cv.HoughLinesP(dst, 1, np.pi / 180, 50, None, 50, 10)
-    
-    if linesP is not None:
-        for i in range(0, len(linesP)):
-            l = linesP[i][0]
-            cv.line(cdstP, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv.LINE_AA)
-    
-    cv.imshow("Detected Lines (in red) - Standard Hough Line Transform", cdst)
-    cv.waitKey()
-    return 0
 
-def generate_video():
 
-    #create output folder in timelapse folder
-    os.mkdir('../test-images-jpeg/output', 0o777)
+def generate_video_from_photos(capture_parent_dir, file_output_name):
 
     (
         ffmpeg
-        .input('../test-images-jpeg/*.jpg', pattern_type='glob', framerate=60)
+        .input(capture_parent_dir + '/capture/*.jpg', pattern_type='glob', framerate=60)
         .filter('deflicker', mode='pm', size=10)
         .filter('scale', size='3840x2160', force_original_aspect_ratio='increase')
-        .output('../test-images-jpeg/output/movie.mp4', crf=20, preset='slow', movflags='faststart', pix_fmt='yuv420p')
+        .output(capture_parent_dir + '/output/' + file_output_name + '.mp4', crf=20, preset='slow', movflags='faststart', pix_fmt='yuv420p')
         #.view(filename='filter_graph')
         .run()
     )
 
-def livestream():
-    (
-        ffmpeg
-        .input('FaceTime', format='avfoundation', pix_fmt='uyvy422', framerate=30)
-        .output('out.mp4', pix_fmt='yuv420p', vframes=1000)
-        .run()
-    )
+    return capture_parent_dir + '/output/' + file_output_name + '.mp4'
+
+
+def upload_to_s3(file_path, bucket, object_name=None):
+
+    # If S3 object_name was not specified, use file_name
+    if object_name is None:
+        object_name = os.path.basename(file_path)
+
+    # Upload the file
+    s3_client = boto3.client('s3')
+    try:
+        response = s3_client.upload_file(file_path, bucket, object_name)
+    except ClientError as e:
+        logging.error(e)
+        return False
+    return True
+
+#mux takes the file uploaded to s3 and processes it for streaming
+#function returns 
+def mux_download_from_s3(bucket_name, file_name):
+    # https://github.com/muxinc/mux-python/blob/master/examples/video/exercise-assets.py
+    # see this for reference 
+
+    input_settings = [mux_python.InputSettings(url=f'https://{bucket_name}.s3.us-east-2.amazonaws.com/{file_name}')]
+    create_asset_request = mux_python.CreateAssetRequest(input=input_settings)
+    create_asset_response = assets_api.create_asset(create_asset_request)
+    assert create_asset_response != None
+    assert create_asset_response.data.id != None
+    print("create-asset OK ✅")
+
+    # Wait for the asset to become ready...
+    if create_asset_response.data.status != 'ready':
+        print("    waiting for asset to become ready...")
+        while True:
+            # ========== get-asset ==========
+            asset_response = assets_api.get_asset(create_asset_response.data.id)
+            assert asset_response != None
+            assert asset_response.data.id == create_asset_response.data.id
+            if asset_response.data.status != 'ready':
+                #logger.print_debug("Asset still not ready. Status was: " + asset_response.data.status)
+                time.sleep(1)
+            else:
+                # ========== get-asset-input-info ==========
+                #logger.print_debug("Asset Ready. Checking input info.")
+                get_asset_input_info_response = assets_api.get_asset_input_info(create_asset_response.data.id)
+                #logger.print_debug("Got Asset Input Info: " + str(get_asset_input_info_response))
+                assert get_asset_input_info_response != None
+                assert get_asset_input_info_response.data != None
+                break
+    print("get-asset OK ✅")
+    print("get-asset-input-info OK ✅")
+
+    # ========== create-asset-playback-id ==========
+    create_playback_id_request = mux_python.CreatePlaybackIDRequest(policy=mux_python.PlaybackPolicy.PUBLIC)
+    create_asset_playback_id_response = assets_api.create_asset_playback_id(create_asset_response.data.id, create_playback_id_request)
+    #logger.print_debug("Added Playback ID: " + str(create_asset_playback_id_response))
+    assert create_asset_playback_id_response != None
+    assert create_asset_playback_id_response.data != None
+    print("create-asset-playback-id OK ✅")
+    return create_asset_playback_id_response['data']['id']
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Timelapse via picamera or gphoto2')
 
     #parser.add_argument('--name', required=True, type=str, dest='name', help='name of folder timelapse to be saved in')
-    #parser.add_argument('--outputpath', required=True, type=str, dest='output_path', help='output dir that will hold newly created timelapse dir')
-    #parser.add_argument('--frames', required=True, type=int, dest='frames',
-        #            help='total number of photos to be taken')
-    #parser.add_argument('--interval', required=True, dest='interval', type=int,
-        #            help='time between each photo in seconds')
-
-    args = parser.parse_args()
-    print(args)
+    #parser.add_argument('--timelapsedir', required=True, type=str, dest='timelapse_dir', help='dir that holds created timelapse & output')
+ 
+    #args = parser.parse_args()
+    #print(args)
+    args = {"name": "deskmovie3.mp4", "dir": "../../remote-test2/output/", "s3bucket": "timelapseuploadsfortwentyfivecents2"}
 
     #display_image()
-    #generate_video()
     #livestream()
-    edge_detection()
+    #edge_detection()
+
+    #generate_video_from_photos
+    
+    # upload to s3
+    #file_path = args.dir + args.name
+    #upload_to_s3(file_path, args.s3bucket)
+
+    # have mux grab video & encode for streaming 
+    asset_playback_id = mux_download_from_s3(args['s3bucket'], args['name'])
+
+    # delete file from bucket once uploaded??? 

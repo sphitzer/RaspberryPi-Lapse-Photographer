@@ -130,3 +130,5 @@ dmypy.json
 
 test-images/
 test-images-jpeg/
+
+/image-processor/.env
