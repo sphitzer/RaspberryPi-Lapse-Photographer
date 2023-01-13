@@ -1,0 +1,19 @@
+services:
+
+  img-processor:
+      build: ./img-processor/
+      #ports:
+      #    - 80:80
+      links:
+          - photographer
+      volumes:
+          - ./output:/output
+
+  photographer:
+      build: ./photographer/
+      privileged: true
+      #expose:
+      #    - 9000
+      volumes:
+          - ./output:/output
+          - /dev/bus/usb:/dev/bus/usb

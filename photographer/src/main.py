@@ -11,6 +11,7 @@ gp.error_severity[gp.GP_ERROR] = logging.DEBUG
 # create the directory that will house photos captured by the timelapse 
 def create_timelapse_dir(output_path, tl_name):
     try:
+        print('creating timelapse directory')
         original_umask = os.umask(0)
         os.mkdir(output_path + '/' + tl_name, 0o777)
         os.mkdir(output_path + '/' + tl_name + '/capture', 0o777)
@@ -49,28 +50,28 @@ def connect_camera():
 
         # on connection, print camera information & exit loop
         # re-add this as debug logging
-        #print('Summary')
-        #print('=======')
-        #print(camera.get_summary())
+        print('Summary')
+        print('=======')
+        print(camera.get_summary())
         break
     
     return camera
 
 
-#WIP, untested...
 def execute_timelapse(camera, capture_path, interval, frames):
 
     for x in range(frames):
-        file_path = camera.capture(gp.GP_CAPTURE_IMAGE)
-        print('Camera file path: {0}/{1}'.format(file_path.folder, file_path.name))
-        target = os.path.join(capture_path, file_path.name)
-        print('Copying image to', target)
-        camera_file = camera.file_get(
-        file_path.folder, file_path.name, gp.GP_FILE_TYPE_NORMAL)
-        camera_file.save(target)
-        time.sleep(interval)
-        #subprocess.call(['xdg-open', target])
-
+        try:
+            print('starting capture')
+            file_path = camera.capture(gp.GP_CAPTURE_IMAGE)
+            print('Camera file path: {0}/{1}'.format(file_path.folder, file_path.name))
+            target = os.path.join(capture_path, file_path.name)
+            print('Copying image to', target)
+            camera_file = camera.file_get(
+            file_path.folder, file_path.name, gp.GP_FILE_TYPE_NORMAL)
+            camera_file.save(target)
+            time.sleep(interval)
+        except Exception as e: print(e)
 
 if __name__ == "__main__":
 
