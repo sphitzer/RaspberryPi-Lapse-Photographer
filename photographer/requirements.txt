@@ -3,3 +3,5 @@ uvicorn
 loguru
 argparse
 gphoto2
+confluent-kafka
+kafka

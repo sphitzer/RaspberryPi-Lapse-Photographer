@@ -11,3 +11,5 @@ python-dotenv
 mux_python
 logger
 openai
+kafka
+confluent-kafka
