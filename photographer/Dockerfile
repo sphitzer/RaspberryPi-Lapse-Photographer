@@ -16,6 +16,7 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 COPY ./src /code/src
 
 # rework this to make output random if no name provided??
-CMD ["python", "./src/main.py", "--name", "squid3", "--outputpath", "/output", "--frames", "5000", "--interval", "12", "--kafka-bootstrap-servers", "broker:9092"]
-#CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["python", "./src/main.py"]
+#CMD ["python", "./src/main.py", "--name", "squid3", "--outputpath", "/output", "--frames", "5000", "--interval", "12", "--kafka-bootstrap-servers", "broker:9092"]
+#CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8030"]
 

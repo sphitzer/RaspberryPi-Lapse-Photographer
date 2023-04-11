@@ -15,7 +15,8 @@ COPY ./src /code/src
 COPY ./.env /code/.env
 
 #need to switch to fastapi for timelapse orchestration...
-CMD ["python", "./src/main.py", "--name", "squid3",  "--timelapsedir", "/output", "--s3bucket", "timelapseuploadsfortwentyfivecents2", "--kafka-bootstrap-servers", "broker:9092"]
+CMD ["python", "./src/main.py"]
+#CMD ["python", "./src/main.py", "--name", "squid3",  "--timelapsedir", "/output", "--s3bucket", "timelapseuploadsfortwentyfivecents2", "--kafka-bootstrap-servers", "broker:9092"]
 
 #CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
 

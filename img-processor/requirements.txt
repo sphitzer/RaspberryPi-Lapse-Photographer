@@ -13,3 +13,6 @@ logger
 openai
 kafka
 confluent-kafka
+fastapi 
+uvicorn
+Pillow

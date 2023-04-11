@@ -2,7 +2,7 @@
 #import cv2 as cv
 #import numpy as np
 #import math
-#import openai
+import openai
 #import ffmpeg
 
 
@@ -14,10 +14,24 @@ def livestream():
         .run()
     )
 
-def openai_test():
-    #import key from .env
-    return None
+def generate_image_description(api_key, prompt, n=1):
+    openai.api_key = api_key
     
+    response = openai.Completion.create(
+        engine="davinci-codex",
+        prompt=prompt,
+        max_tokens=50,
+        n=n,
+        stop=None,
+        temperature=0.7,
+    )
+    
+    descriptions = [choice.text.strip() for choice in response.choices]
+    
+    if n == 1:
+        return descriptions[0]
+    else:
+        return descriptions
 
 def display_image():
 

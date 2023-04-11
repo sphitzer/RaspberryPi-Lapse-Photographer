@@ -7,6 +7,8 @@ import logging
 from loguru import logger
 import base64
 from confluent_kafka import Producer, KafkaError
+from fastapi import FastAPI, Query, BackgroundTasks
+import uvicorn
 
 gp.error_severity[gp.GP_ERROR] = logging.DEBUG
 
@@ -218,17 +220,24 @@ class Timelapse:
         # except Exception as e:
         #     logger.error(f"Unexpected error: {e}")
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Timelapse via picamera or gphoto2')
 
-    parser.add_argument('--name', required=True, type=str, dest='name', help='Name of folder timelapse to be saved in')
-    parser.add_argument('--outputpath', required=True, type=str, dest='output_path', help='Output dir that will hold newly created timelapse dir')
-    parser.add_argument('--frames', required=True, type=int, dest='frames', help='Total number of photos to be taken')
-    parser.add_argument('--interval', required=True, dest='interval', type=int, help='Time between each photo in seconds')
-    parser.add_argument('--kafka-bootstrap-servers', required=True, type=str, dest='kafka_bootstrap_servers',
-                            help='Kafka bootstrap servers (e.g., "localhost:9092")')
+app = FastAPI()
 
-    args = parser.parse_args()
-
-    timelapse = Timelapse(args.output_path, args.name, args.interval, args.frames, args.kafka_bootstrap_servers)
+async def async_run_timelapse(output_path, name, interval, frames, kafka_bootstrap_servers):
+    timelapse = Timelapse(output_path, name, interval, frames, kafka_bootstrap_servers)
     timelapse.run()
+
+@app.post("/start_timelapse/")
+async def start_timelapse(
+    background_tasks: BackgroundTasks,
+    name: str = Query(..., description="Name of folder timelapse to be saved in"),
+    output_path: str = Query(..., description="Output dir that will hold newly created timelapse dir"),
+    frames: int = Query(..., description="Total number of photos to be taken"),
+    interval: int = Query(..., description="Time between each photo in seconds"),
+    kafka_bootstrap_servers: str = Query(..., description="Kafka bootstrap servers, e.g. broker:9092"),
+):
+    background_tasks.add_task(async_run_timelapse, output_path, name, interval, frames, kafka_bootstrap_servers)
+    return {"message": "Timelapse started"}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8030)

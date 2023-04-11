@@ -20,7 +20,7 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://broker:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092,PLAINTEXT_INTERNAL://broker:29092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -29,16 +29,22 @@ services:
       build: ./img-processor/
       links:
           - photographer
+      ports:
+        - "8020:8020"
       volumes:
           - ./output:/output
+          - ~/.aws/credentials:/root/.aws/credentials
       depends_on:
         - broker
 
   photographer:
       build: ./photographer/
       privileged: true
+      ports:
+        - "8030:8030"
       volumes:
           - ./output:/output
           - /dev/bus/usb:/dev/bus/usb
       depends_on:
         - broker
+        
