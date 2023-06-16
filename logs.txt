@@ -1,0 +1,60 @@
+INFO:     172.27.0.1:35232 - "POST /start_timelapse/?name=a&output_path=%2Foutput&frames=1000&interval=25&kafka_bootstrap_server=broker%3A9092 HTTP/1.1" 200 OK
+{
+    "name": "/start_timelapse/ http send",
+    "context": {
+        "trace_id": "0x7fe12577c8dcefd70a18b2a359a433e9",
+        "span_id": "0x4adebebce61055c3",
+        "trace_state": "[]"
+    },
+    "kind": "SpanKind.INTERNAL",
+    "parent_id": "0x19857cc2d9c28aa3",
+    "start_time": "2023-05-03T20:48:33.504634Z",
+    "end_time": "2023-05-03T20:48:33.505070Z",
+    "status": {
+        "status_code": "UNSET"
+    },
+    "attributes": {
+        "http.status_code": 200,
+        "type": "http.response.start"
+    },
+    "events": [],
+    "links": [],
+    "resource": {
+        "attributes": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.17.0",
+            "service.name": "unknown_service"
+        },
+        "schema_url": ""
+    }
+}
+{
+    "name": "/start_timelapse/ http send",
+    "context": {
+        "trace_id": "0x7fe12577c8dcefd70a18b2a359a433e9",
+        "span_id": "0x9373570096f06967",
+        "trace_state": "[]"
+    },
+    "kind": "SpanKind.INTERNAL",
+    "parent_id": "0x19857cc2d9c28aa3",
+    "start_time": "2023-05-03T20:48:33.505461Z",
+    "end_time": "2023-05-03T20:48:33.505669Z",
+    "status": {
+        "status_code": "UNSET"
+    },
+    "attributes": {
+        "type": "http.response.body"
+    },
+    "events": [],
+    "links": [],
+    "resource": {
+        "attributes": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.17.0",
+            "service.name": "unknown_service"
+        },
+        "schema_url": ""
+    }
+}

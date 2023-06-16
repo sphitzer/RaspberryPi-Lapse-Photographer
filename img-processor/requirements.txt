@@ -16,3 +16,7 @@ confluent-kafka
 fastapi 
 uvicorn
 Pillow
+requests
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation-fastapi

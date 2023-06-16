@@ -5,3 +5,6 @@ argparse
 gphoto2
 confluent-kafka
 kafka
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation-fastapi
