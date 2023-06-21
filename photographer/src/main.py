@@ -51,7 +51,7 @@ async def reprocess_timelapse(
     name: str = Query(..., description="Name of folder timelapse to be processed"),
     output_path: str = Query(..., description="Output dir where timelapse images are stored", example="/output"),
     kafka_bootstrap_servers: str = Query(..., description="Kafka bootstrap servers", example="broker:9092"),
-    topic_name: str = Query(..., description="Name of kafka topic to place images on", example="timelapse_images2")
+    topic_name: str = Query(..., description="Name of kafka topic to place images on", example="timelapse_images4")
     ):
     background_tasks.add_task(async_reprocess_timelapse, output_path, name, kafka_bootstrap_servers, topic_name)
     return {"message": "Timelapse re-processing started"}
