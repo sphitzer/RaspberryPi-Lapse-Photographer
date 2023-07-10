@@ -24,8 +24,8 @@ trace.get_tracer_provider().add_span_processor(
 
 FastAPIInstrumentor.instrument_app(app)
 
-async def async_run_timelapse(output_path, name, interval, frames, kafka_bootstrap_servers):
-    timelapse = Timelapse(output_path, name, interval, frames, kafka_bootstrap_servers)
+async def async_run_timelapse(output_path, name, interval, frames, kafka_bootstrap_servers, topic_name):
+    timelapse = Timelapse(output_path, name, interval, frames, kafka_bootstrap_servers, topic_name)
     FileUtils.create_timelapse_dir(output_path, name)
     timelapse.run()
 
@@ -41,8 +41,9 @@ async def start_timelapse(
     frames: int = Query(..., description="Total number of photos to be taken"),
     interval: int = Query(..., description="Time between each photo in seconds"),
     kafka_bootstrap_server: str = Query(..., description="Kafka bootstrap server, e.g. broker:9092", example="broker:9092"),
+    topic_name: str = Query(..., description="Name of kafka topic to place images on", example="timelapse_images4")
     ):
-    background_tasks.add_task(async_run_timelapse, output_path, name, interval, frames, kafka_bootstrap_server)
+    background_tasks.add_task(async_run_timelapse, output_path, name, interval, frames, kafka_bootstrap_server, topic_name)
     return {"message": "Timelapse started"}
 
 @app.post("/reprocess_timelapse/")

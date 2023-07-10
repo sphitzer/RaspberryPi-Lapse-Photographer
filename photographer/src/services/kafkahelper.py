@@ -25,7 +25,7 @@ class KafkaHelper:
     def on_send_error(self, excp):
         logger.error(f"Error while sending message to Kafka: {excp}", exc_info=True)
 
-    def place_image_on_kafka_queue(self, img_base64, topic='timelapse_images2'):
+    def place_image_on_kafka_queue(self, img_base64, topic):
         logger.info('Start send to Kafka queue')
 
         try:

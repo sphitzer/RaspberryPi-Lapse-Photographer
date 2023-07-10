@@ -10,13 +10,14 @@ from .fileutils import FileUtils
 from loguru import logger
 
 class Timelapse:
-    def __init__(self, output_path, tl_name, interval, frames, kafka_bootstrap_servers):
+    def __init__(self, output_path, tl_name, interval, frames, kafka_bootstrap_servers, topic_name):
         self.output_path = output_path
         self.tl_name = tl_name
         self.interval = interval
         self.frames = frames
         self.capture_path = os.path.join(self.output_path, self.tl_name, 'capture')
         self.kafka_bootstrap_servers = kafka_bootstrap_servers
+        self. topic_name = topic_name
         self.img_iterator = 0
 
         self.camera = Camera()
@@ -50,10 +51,10 @@ class Timelapse:
                     # capture image w/ camera & return base64 encoded image
                     img_base64 = self.camera.capture_image(self.output_path, self.tl_name)
       
-                    # place image on kafka queue (need to make this optional for offline exercises)
-                    self.kafka.place_image_on_kafka_queue(img_base64)
+                    # place image on kafka queue 
+                    self.kafka.place_image_on_kafka_queue(img_base64,self.topic_name)
 
-                    # save image to disk (also make this optional)
+                    # save image to disk (make this optional)
                     FileUtils.save_base64_image(self.output_path, self.tl_name, self.img_iterator, img_base64)
 
                     # Increment the iterator for the next image

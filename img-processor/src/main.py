@@ -101,6 +101,7 @@ class TimelapseGenerator:
                 logger.error (f"Msg: {counter} error while consuming message: {msg.error()} ")
                 continue
 
+            no_messages_counter = 0
             logger.info(f"Consumed message {counter}")
             img_file_path = self.file_utils.save_decoded_image_to_disk(msg.value(), len(images))
             images.append(img_file_path)
